@@ -128,6 +128,15 @@
 	  [(? bytes? leaf) (cons leaf acc)]
 	  [(node _ zero one) (walk zero (walk one acc))]))))
 
+(define (in-tree tree)
+  (if (empty? tree)
+      '()
+      (in-generator
+       (let walk ((n (critbit-tree-root tree)))
+	 (match n
+	   [(? bytes? leaf) (yield leaf)]
+	   [(node _ zero one) (begin (walk zero) (walk one))])))))
+
 ;; (require racket/trace)
 ;; (trace delete)
 
@@ -148,6 +157,9 @@
   (define (b->i bs) (integer-bytes->integer bs #t #t))
 
   (map b->i (tree->list (seq->tree (shuffle (iota 10)))))
+
+  (for ([x (in-tree (seq->tree (shuffle (iota 10))))])
+    (printf "~v~n" x))
 
   (map b->i (tree->list (for/fold ([t (seq->tree (iota 10))])
 			    ([k (shuffle (iota 5))])
