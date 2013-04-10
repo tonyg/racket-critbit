@@ -153,12 +153,12 @@
 
 ;; (define (in-tree tree)
 ;;   (if (empty? tree)
-;;       '()
-;;       (in-generator
-;;        (let walk ((n (critbit-tree-root tree)))
-;; 	 (match n
-;; 	   [(? bytes? leaf) (yield leaf)]
-;; 	   [(node _ zero one) (begin (walk zero) (walk one))])))))
+;;	 '()
+;;	 (in-generator
+;;	  (let walk ((n (critbit-tree-root tree)))
+;;	 (match n
+;;	   [(? bytes? leaf) (yield leaf)]
+;;	   [(node _ zero one) (begin (walk zero) (walk one))])))))
 
 ;; (require racket/trace)
 ;; (trace delete)
@@ -217,37 +217,37 @@
 
   (printf "Critbit - removal\n")
   (void (repeat 3 (lambda ()
-  		    (for/fold: ([t : Tree full-c]) ([i (in-range max-count)])
-  		      (delete t (i->b i))))))
+		    (for/fold: ([t : Tree full-c]) ([i (in-range max-count)])
+		      (delete t (i->b i))))))
 
   (printf "Set - removal\n")
   (void (repeat 3 (lambda ()
-  		    (for/fold: ([t : (Setof Bytes) full-s]) ([i (in-range max-count)])
-  		      (set-remove t (i->b i))))))
+		    (for/fold: ([t : (Setof Bytes) full-s]) ([i (in-range max-count)])
+		      (set-remove t (i->b i))))))
 
   (printf "Critbit - positive membership\n")
   (repeat 3 (lambda ()
-  	      (for: ([i : Integer (in-range max-count)])
-  		(when (not (contains? full-c (i->b i)))
-  		  (error 'critbit "Membership problem")))))
+	      (for: ([i : Integer (in-range max-count)])
+		(when (not (contains? full-c (i->b i)))
+		  (error 'critbit "Membership problem")))))
 
   (printf "Set - positive membership\n")
   (repeat 3 (lambda ()
-  	      (for: ([i : Integer (in-range max-count)])
-  		(when (not (set-member? full-s (i->b i)))
-  		  (error 'set "Membership problem")))))
+	      (for: ([i : Integer (in-range max-count)])
+		(when (not (set-member? full-s (i->b i)))
+		  (error 'set "Membership problem")))))
 
   (printf "Critbit - negative membership\n")
   (repeat 3 (lambda ()
-  	      (for: ([i : Integer (in-range max-count (* 2 max-count))])
-  		(when (contains? full-c (i->b i))
-  		  (error 'critbit "Membership problem")))))
+	      (for: ([i : Integer (in-range max-count (* 2 max-count))])
+		(when (contains? full-c (i->b i))
+		  (error 'critbit "Membership problem")))))
 
   (printf "Set - negative membership\n")
   (repeat 3 (lambda ()
-  	      (for: ([i : Integer (in-range max-count (* 2 max-count))])
-  		(when (set-member? full-s (i->b i))
-  		  (error 'set "Membership problem")))))
+	      (for: ([i : Integer (in-range max-count (* 2 max-count))])
+		(when (set-member? full-s (i->b i))
+		  (error 'set "Membership problem")))))
 
   (map b->i (tree->list (for/fold: ([t : Tree (seq->tree (iota 10))])
 			    ([k (shuffle (iota 5))])
