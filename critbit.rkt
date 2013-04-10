@@ -30,8 +30,8 @@
 (define (contains? tree key)
   (if (empty? tree)
       #f
-      (let walk ((tree tree))
-	(match tree
+      (let walk ((n (critbit-tree-root tree)))
+	(match n
 	  [(? bytes? leaf)
 	   (infinite-bytes=? leaf key)]
 	  [(node index zero one)
