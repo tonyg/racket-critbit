@@ -141,7 +141,7 @@
 ;; (trace delete)
 
 (module+ main
-  (require racket)
+  (require (except-in racket empty))
 
   (seq->tree (list #"abc" #"abd" #"abe" #"aaa" #"zzz"))
   (seq->tree (reverse (list #"abc" #"abd" #"abe" #"aaa" #"zzz")))
@@ -153,13 +153,74 @@
   (seq->tree (shuffle (list #"Alice" #"Bob" #"Eve" #"Mallory" #"Trevor")))
   (seq->tree (shuffle (list #"Alice" #"Bob" #"Eve" #"Mallory" #"Trevor")))
 
-  (define (iota n) (for/list ([i n]) (integer->integer-bytes i 4 #t #t)))
+  (define (i->b i) (integer->integer-bytes i 4 #t #t))
   (define (b->i bs) (integer-bytes->integer bs #t #t))
+
+  (define (iota n) (for/list ([i n]) (integer->integer-bytes i 4 #t #t)))
 
   (map b->i (tree->list (seq->tree (shuffle (iota 10)))))
 
   (for ([x (in-tree (seq->tree (shuffle (iota 10))))])
-    (printf "~v~n" x))
+    (printf "~v\n" x))
+
+  (define max-count 500000)
+
+  (printf "Enumeration (baseline)\n")
+  (time (begin (for ([i (in-range max-count)]) (i->b i)) (void)))
+  (time (begin (for ([i (in-range max-count)]) (i->b i)) (void)))
+  (time (begin (for ([i (in-range max-count)]) (i->b i)) (void)))
+
+  (printf "Critbit - insertion\n")
+  (define full-c (time (for/fold ([t (empty)]) ([i (in-range max-count)]) (insert t (i->b i)))))
+  ;; (time (begin (for/fold ([t (empty)]) ([i (in-range max-count)]) (insert t (i->b i))) (void)))
+  ;; (time (begin (for/fold ([t (empty)]) ([i (in-range max-count)]) (insert t (i->b i))) (void)))
+
+  (printf "Set - insertion\n")
+  (define full-s (time (for/fold ([t (set)]) ([i (in-range max-count)]) (set-add t (i->b i)))))
+  ;; (time (begin (for/fold ([t (set)]) ([i (in-range max-count)]) (set-add t (i->b i))) (void)))
+  ;; (time (begin (for/fold ([t (set)]) ([i (in-range max-count)]) (set-add t (i->b i))) (void)))
+
+  ;; (printf "Critbit - removal\n")
+  ;; (time (begin (for/fold ([t full-c]) ([i (in-range max-count)]) (delete t (i->b i))) (void)))
+  ;; (time (begin (for/fold ([t full-c]) ([i (in-range max-count)]) (delete t (i->b i))) (void)))
+  ;; (time (begin (for/fold ([t full-c]) ([i (in-range max-count)]) (delete t (i->b i))) (void)))
+
+  ;; (printf "Set - removal\n")
+  ;; (time (begin (for/fold ([t full-s]) ([i (in-range max-count)]) (set-remove t (i->b i))) (void)))
+  ;; (time (begin (for/fold ([t full-s]) ([i (in-range max-count)]) (set-remove t (i->b i))) (void)))
+  ;; (time (begin (for/fold ([t full-s]) ([i (in-range max-count)]) (set-remove t (i->b i))) (void)))
+
+  (printf "Critbit - positive membership\n")
+  (time (for ([i (in-range max-count)])
+	  (when (not (contains? full-c (i->b i))) (error 'critbit "Membership problem"))))
+  (time (for ([i (in-range max-count)])
+	  (when (not (contains? full-c (i->b i))) (error 'critbit "Membership problem"))))
+  (time (for ([i (in-range max-count)])
+	  (when (not (contains? full-c (i->b i))) (error 'critbit "Membership problem"))))
+
+  (printf "Set - positive membership\n")
+  (time (for ([i (in-range max-count)])
+	  (when (not (set-member? full-s (i->b i))) (error 'set "Membership problem"))))
+  (time (for ([i (in-range max-count)])
+	  (when (not (set-member? full-s (i->b i))) (error 'set "Membership problem"))))
+  (time (for ([i (in-range max-count)])
+	  (when (not (set-member? full-s (i->b i))) (error 'set "Membership problem"))))
+
+  (printf "Critbit - negative membership\n")
+  (time (for ([i (in-range max-count (* 2 max-count))])
+	  (when (contains? full-c (i->b i)) (error 'critbit "Membership problem"))))
+  (time (for ([i (in-range max-count (* 2 max-count))])
+	  (when (contains? full-c (i->b i)) (error 'critbit "Membership problem"))))
+  (time (for ([i (in-range max-count (* 2 max-count))])
+	  (when (contains? full-c (i->b i)) (error 'critbit "Membership problem"))))
+
+  (printf "Set - negative membership\n")
+  (time (for ([i (in-range max-count (* 2 max-count))])
+	  (when (set-member? full-s (i->b i)) (error 'set "Membership problem"))))
+  (time (for ([i (in-range max-count (* 2 max-count))])
+	  (when (set-member? full-s (i->b i)) (error 'set "Membership problem"))))
+  (time (for ([i (in-range max-count (* 2 max-count))])
+	  (when (set-member? full-s (i->b i)) (error 'set "Membership problem"))))
 
   (map b->i (tree->list (for/fold ([t (seq->tree (iota 10))])
 			    ([k (shuffle (iota 5))])
