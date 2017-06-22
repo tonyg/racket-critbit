@@ -5,6 +5,18 @@
 
 ;; TODO: clever bitmask representation of critbit position
 
+(provide critbit-tree?
+         empty
+         empty?
+         contains?
+         insert
+         delete
+         seq->tree
+         tree->list
+
+         ;; For debugging/visualisation
+         tree->nodes)
+
 (require racket/match)
 (require racket/generator)
 
@@ -144,6 +156,16 @@
 	(match n
 	  [(? bytes? leaf) (cons leaf acc)]
 	  [(node _ zero one) (walk zero (walk one acc))]))))
+
+(: tree->nodes : Tree -> Any)
+(define (tree->nodes tree)
+  (define root (critbit-tree-root tree))
+  (if (not root)
+      '()
+      (let: walk ((n : Node root))
+        (match n
+          [(? bytes? leaf) leaf]
+          [(node index zero one) (list index (walk zero) (walk one))]))))
 
 ;; (define (in-tree tree)
 ;;   (if (empty? tree)
