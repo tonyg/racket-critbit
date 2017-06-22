@@ -41,7 +41,7 @@
       (let walk ((n root))
 	(match n
 	  [(? bytes? leaf)
-	   (infinite-bytes=? leaf key)]
+           (not (critical-bit leaf key))]
 	  [(node index zero one)
 	   (walk (if (bit-ref key index) one zero))]))))
 
@@ -50,15 +50,6 @@
   (if (>= n (bytes-length bs))
       0 ;; treat byte-strings as followed by an infinite suffix of zeroes
       (bytes-ref bs n)))
-
-(: infinite-bytes=? : Bytes Bytes -> Boolean)
-(define (infinite-bytes=? a b)
-  (define limit (max (bytes-length a) (bytes-length b)))
-  (let: check ((i : TIndex 0))
-    (cond
-     [(= i limit) #t]
-     [(= (infinite-bytes-ref a i) (infinite-bytes-ref b i)) (check (+ i 1))]
-     [else #f])))
 
 ;; Bits are numbered thus:
 ;; |----------------|----------------|----------------|---...
@@ -81,7 +72,8 @@
   (define (walk n)
     (match n
       [(? bytes? leaf)
-       (join leaf key)]
+       (or (critical-bit leaf key)
+           leaf)]
       [(node index zero one)
        (: maybe-splice : Node (Node -> Node) -> (U TIndex Node))
        (define (maybe-splice child stitch)
@@ -102,19 +94,21 @@
 	     (splice-key new root)
 	     new)))))
 
-(: join : Bytes Bytes -> (U TIndex Bytes))
-(define (join leaf key)
-  (define limit (max (bytes-length leaf) (bytes-length key)))
+;; Answers #f when `a` and `b` are identical; otherwise, the index of
+;; the first (lowest-numbered) bit that distinguishes them.
+(: critical-bit : Bytes Bytes -> (Option TIndex))
+(define (critical-bit a b)
+  (define limit (max (bytes-length a) (bytes-length b)))
   (let: find-differing-byte ((i : TIndex 0))
     (if (= i limit)
-	leaf ;; they're the same (infinite zeros on the end!) byte string
-	(let ((delta (bitwise-xor (infinite-bytes-ref leaf i) (infinite-bytes-ref key i))))
+        #f ;; they're the same (infinite zeros on the end!) byte string
+	(let ((delta (bitwise-xor (infinite-bytes-ref a i) (infinite-bytes-ref b i))))
 	  (if (zero? delta)
 	      (find-differing-byte (+ i 1))
 	      (let* ((bit (- 8 (integer-length delta))) ;; 0th bit is high
 		     (index (+ (* i 8) bit)))
 		(if (< index 0)
-		    (error 'join "Internal error: should never happen")
+		    (error 'critical-bit "Internal error: should never happen")
 		    ;; ^ this is here just to satisfy TR
 		    index)))))))
 
@@ -127,7 +121,7 @@
        (let walk ((n root))
 	 (match n
 	   [(? bytes? leaf)
-	    (if (infinite-bytes=? leaf key)
+	    (if (not (critical-bit leaf key))
 		#f
 		leaf)]
 	   [(node index zero one)
