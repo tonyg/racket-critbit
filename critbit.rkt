@@ -215,6 +215,12 @@
 		(for/fold: ([t : (Setof Bytes) (set)]) ([i (in-range max-count)])
 		  (set-add t (i->b i))))))
 
+  (printf "Hash - insertion\n")
+  (define full-h
+    (repeat 3 (lambda ()
+		(for/fold: ([t : (HashTable Bytes True) (hash)]) ([i (in-range max-count)])
+		  (hash-set t (i->b i) #t)))))
+
   (printf "Critbit - removal\n")
   (void (repeat 3 (lambda ()
 		    (for/fold: ([t : Tree full-c]) ([i (in-range max-count)])
@@ -224,6 +230,11 @@
   (void (repeat 3 (lambda ()
 		    (for/fold: ([t : (Setof Bytes) full-s]) ([i (in-range max-count)])
 		      (set-remove t (i->b i))))))
+
+  (printf "Hash - removal\n")
+  (void (repeat 3 (lambda ()
+		    (for/fold: ([t : (HashTable Bytes True) full-h]) ([i (in-range max-count)])
+                      (hash-remove t (i->b i))))))
 
   (printf "Critbit - positive membership\n")
   (repeat 3 (lambda ()
@@ -237,6 +248,12 @@
 		(when (not (set-member? full-s (i->b i)))
 		  (error 'set "Membership problem")))))
 
+  (printf "Hash - positive membership\n")
+  (repeat 3 (lambda ()
+	      (for: ([i : Integer (in-range max-count)])
+		(when (not (hash-has-key? full-h (i->b i)))
+		  (error 'hash "Membership problem")))))
+
   (printf "Critbit - negative membership\n")
   (repeat 3 (lambda ()
 	      (for: ([i : Integer (in-range max-count (* 2 max-count))])
@@ -248,6 +265,12 @@
 	      (for: ([i : Integer (in-range max-count (* 2 max-count))])
 		(when (set-member? full-s (i->b i))
 		  (error 'set "Membership problem")))))
+
+  (printf "Hash - negative membership\n")
+  (repeat 3 (lambda ()
+	      (for: ([i : Integer (in-range max-count (* 2 max-count))])
+		(when (hash-has-key? full-h (i->b i))
+		  (error 'hash "Membership problem")))))
 
   (map b->i (tree->list (for/fold: ([t : Tree (seq->tree (iota 10))])
 			    ([k (shuffle (iota 5))])
